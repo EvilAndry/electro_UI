@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Сортувальник — схеми</title>
+<meta name="description" content="Інтерактивні електрична, логічна та фізичні схеми шафи керування і сортувальника.">
+<meta name="theme-color" content="#14171c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d4202a'/%3E%3Cpath d='M9 7v10a7 7 0 0 0 14 0V7' fill='none' stroke='white' stroke-width='4'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span class="logo" aria-hidden="true"></span>
+    <div>
+      <h1>Сортувальник · схеми</h1>
+      <p class="sub">електрична · логічна · шафа · сортувальник</p>
+    </div>
+  </div>
+  <div class="search">
+    <input id="q" type="search" placeholder="Пошук: QF1, контактор, M305, W12…" autocomplete="off" aria-label="Пошук елемента або кабелю">
+    <div id="qres" class="qres" hidden></div>
+  </div>
+  <div class="tools">
+    <label class="tg" title="Підсвічувати весь ланцюг живлення / керування"><input type="checkbox" id="optTrace"><span>Ланцюг</span></label>
+    <label class="tg" title="Завжди показувати маркування кабелів на фізичних схемах"><input type="checkbox" id="optTags"><span>Маркування</span></label>
+    <label class="tg" title="Автоматично наводити інші схеми на виділене"><input type="checkbox" id="optFocus"><span>Автофокус</span></label>
+    <div class="seg" id="layoutSeg" title="Кількість схем на екрані"><button data-l="1">1</button><button data-l="2">2</button></div>
+    <button id="btnInfo" class="icon-btn" title="Панель інформації">i</button>
+  </div>
+</header>
+<main id="main">
+  <section id="panes"></section>
+  <aside id="info">
+    <button class="sheet-handle" aria-label="Розгорнути панель"><span></span></button>
+    <div class="info-body"></div>
+  </aside>
+</main>
+<div id="tip" class="tip" hidden></div>
+<script src="js/data.js"></script>
+<script src="js/svg.js"></script>
+<script src="js/view-elec.js"></script>
+<script src="js/view-logic.js"></script>
+<script src="js/view-cab.js"></script>
+<script src="js/view-sorter.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
