@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "static",
+      "runtimeExecutable": "C:/Program Files/Git/usr/bin/perl.exe",
+      "runtimeArgs": ["C:/Users/User/AppData/Local/Temp/claude/f4de3718e5ec0a50/9f579203-660a-44d1-b414-fb037fb4e7a8/scratchpad/serve.pl", "C:/Users/User/Desktop/electronativ", "8765"],
+      "port": 8765
+    }
+  ]
+}
