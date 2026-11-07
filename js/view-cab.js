@@ -50,7 +50,7 @@
     D.groups.forEach((G, gi) => {
       const y = 560 + gi * 130;
       put(G.pa, 322, y, 48, 84, 'meter', 'G' + G.n);
-      G.lines.forEach((Ln, i) => put(Ln.qf, 374 + i * 16, y, 16, 84, 'iek', 'G' + G.n));
+      G.lines.forEach((Ln, i) => put(Ln.qf, 374 + i * 50, y, 48, 84, 'iek', 'G' + G.n, { poles: 3, rating: 'C?' }));
     });
     D.drivers.forEach((dv, i) => {
       const col = Math.floor(i / 10), row = i % 10;
@@ -64,12 +64,17 @@
     put('EL1', 66, 138, 600, 14, 'led', 'TOP');
     put('SQ1', 520, 156, 78, 30, 'limit', 'TOP');
     put('BK1', 604, 196, 12, 30, 'sensor', 'TOP');
-    put('HL1', 1085, 420, 34, 34, 'lamp', 'DOOR', { col: '#22c55e' });
-    put('HL2', 1085, 486, 34, 34, 'lamp', 'DOOR', { col: '#22c55e' });
-    put('HL3', 1085, 552, 34, 34, 'lamp', 'DOOR', { col: '#ef4444' });
-    put('SB1', 1205, 420, 34, 34, 'btn', 'DOOR', { col: '#16a34a' });
-    put('SB2', 1205, 486, 34, 34, 'btn', 'DOOR', { col: '#dc2626' });
-    put('SB3', 1198, 548, 48, 48, 'estop', 'DOOR');
+    // двері — за фото фасаду: ключ; лампи Робота / Пауза / Лінія стоп; Пуск з підсвіткою; синя, Лінія старт, Стоп; аварійна
+    put('SA1', 1173, 300, 34, 34, 'keysw', 'DOOR');
+    put('HL1', 1103, 372, 34, 34, 'lamp', 'DOOR', { col: '#22c55e' });
+    put('HL2', 1173, 372, 34, 34, 'lamp', 'DOOR', { col: '#f59e0b' });
+    put('HL3', 1243, 372, 34, 34, 'lamp', 'DOOR', { col: '#ef4444' });
+    put('SB1', 1173, 444, 34, 34, 'btn', 'DOOR', { col: '#22c55e', glow: true });
+    put('SB7', 1103, 516, 34, 34, 'btn', 'DOOR', { col: '#2563eb' });
+    put('SB2', 1173, 516, 34, 34, 'btn', 'DOOR', { col: '#16a34a' });
+    put('SB3', 1243, 516, 34, 34, 'btn', 'DOOR', { col: '#dc2626' });
+    put('SB4', 1166, 610, 48, 48, 'estop', 'DOOR');
+    put('NET1', 300, -150, 300, 40, 'switch', 'RACK');
     put('GRID', 150, 1965, 110, 40, 'entry', 'EXT_IN');
     return L;
   }
@@ -94,6 +99,7 @@
       case 'TOP': return { t: 'TOP', c: cx, pre: [[cx, o.y + o.h]] };
       case 'DOOR': { const yy = o.y + o.h / 2; return { t: 'D', c: yy, pre: [[o.x, yy]] }; }
       case 'EXT_IN': return { t: 'L', c: 1925, pre: [[205, 1965], [205, 1925]] };
+      case 'RACK': { const xx = 330 + Math.abs(j); return { t: 'TOP', c: xx, pre: [[xx, o.y + o.h]] }; }
     }
     return { t: 'L', c: o.y, pre: [[o.x, o.y]] };
   }
@@ -129,7 +135,7 @@
         const p = o.poles || 1;
         screws(p);
         R(x + 2, y + h * 0.42, w - 4, h * 0.2, 'm-yellow');
-        if (p > 1) T(g, x + w / 2, y + 30, 'C50', { class: 'plbl', 'text-anchor': 'middle' });
+        if (p > 1) T(g, x + w / 2, y + 30, o.rating || 'C50', { class: 'plbl', 'text-anchor': 'middle' });
         else R(x + w / 2 - 2, y + 24, 4, 3, 'm-redwin');
         if (p === 1) vlabel(e.caption || SV.label(e.id), y + h - 17, 'tiny');
         else T(g, x + w / 2, y + h - 18, SV.label(e.id), { class: 'plbl b', 'text-anchor': 'middle' });
@@ -258,12 +264,23 @@
       case 'lamp':
         E('circle', { cx: x + w / 2, cy: y + h / 2, r: w / 2, class: 'm-bezel' }, g);
         E('circle', { cx: x + w / 2, cy: y + h / 2, r: w / 2 - 5, fill: o.col, class: 'm-lamp' }, g);
-        T(g, x - 6, y + h / 2 + 4, SV.label(e.id), { class: 'plbl b light', 'text-anchor': 'end' });
+        T(g, x + w / 2, y - 5, SV.label(e.id), { class: 'plbl b light', 'text-anchor': 'middle' });
         break;
       case 'btn':
         E('circle', { cx: x + w / 2, cy: y + h / 2, r: w / 2, class: 'm-bezel' }, g);
-        E('circle', { cx: x + w / 2, cy: y + h / 2, r: w / 2 - 6, fill: o.col, class: 'm-lamp' }, g);
+        E('circle', { cx: x + w / 2, cy: y + h / 2, r: w / 2 - 6, fill: o.col, class: 'm-lamp' + (o.glow ? ' glow' : '') }, g);
+        T(g, x + w / 2, y + h + 12, SV.label(e.id), { class: 'plbl b light', 'text-anchor': 'middle' });
+        break;
+      case 'keysw':
+        E('circle', { cx: x + w / 2, cy: y + h / 2, r: w / 2, class: 'm-bezel' }, g);
+        E('circle', { cx: x + w / 2, cy: y + h / 2, r: w / 2 - 6, class: 'm-knob' }, g);
+        R(x + w / 2 - 2, y + 7, 4, h - 14, 'm-btn');
         T(g, x + w + 6, y + h / 2 + 4, SV.label(e.id), { class: 'plbl b light' });
+        break;
+      case 'switch':
+        R(x, y, w, h, 'm-switch', { rx: 3 });
+        for (let i = 0; i < 16; i++) R(x + 40 + i * 14, y + 12, 10, 9, 'm-port');
+        T(g, x + 6, y + h - 8, SV.label(e.id), { class: 'plbl b light' });
         break;
       case 'estop':
         E('circle', { cx: x + w / 2, cy: y + h / 2, r: w / 2, class: 'm-estop-ring' }, g);
@@ -311,10 +328,16 @@
     /* двері */
     E('rect', { x: 990, y: 20, width: 400, height: 1920, rx: 10, class: 'cab-shell' }, st);
     E('rect', { x: 1012, y: 44, width: 356, height: 1872, rx: 6, class: 'door-in' }, st);
-    E('rect', { x: 1050, y: 380, width: 280, height: 250, rx: 8, class: 'door-panel' }, st);
-    T(st, 1190, 44 + 30, 'Двері (вигляд зсередини)', { class: 'cap', 'text-anchor': 'middle' });
-    T(st, 1190, 650, 'Кнопки та лампи — розміщення й', { class: 'plbl light', 'text-anchor': 'middle' });
-    T(st, 1190, 664, 'функції умовні (уточнити)', { class: 'plbl light', 'text-anchor': 'middle' });
+    E('rect', { x: 1060, y: 270, width: 260, height: 420, rx: 8, class: 'door-panel' }, st);
+    T(st, 1190, 44 + 30, 'Двері (органи керування на фасаді)', { class: 'cap', 'text-anchor': 'middle' });
+    [['Ключ', 296], ['Робота · Пауза · Лінія стоп', 368], ['Пуск (підсвітка)', 440], ['? · Лінія старт · Стоп', 512], ['Аварійна зупинка', 606]].forEach(([t, y]) => T(st, 1190, y - 6, t, { class: 'plbl tiny light', 'text-anchor': 'middle', opacity: 0.7 }));
+    T(st, 1190, 720, 'Розміщення — за фото фасаду; написи на табличках', { class: 'plbl light', 'text-anchor': 'middle' });
+    T(st, 1190, 734, 'нечитабельні, синя кнопка — уточнити', { class: 'plbl light', 'text-anchor': 'middle' });
+    /* мережева стійка на даху */
+    E('rect', { x: 150, y: -230, width: 500, height: 230, rx: 6, class: 'cab-shell' }, st);
+    E('rect', { x: 172, y: -208, width: 456, height: 186, rx: 4, class: 'rack-glass' }, st);
+    T(st, 400, -240, 'Мережева стійка на даху шафи', { class: 'cap', 'text-anchor': 'middle' });
+    for (let i = 0; i < 9; i++) E('path', { d: 'M' + (330 + i * 30) + ' -110 C ' + (330 + i * 30) + ' -170, ' + (360 + i * 25) + ' -200, ' + (420 + i * 20) + ' -205', class: 'patch' }, st);
     [200, 960, 1720].forEach((y) => E('rect', { x: 980, y, width: 14, height: 60, rx: 3, class: 'hinge' }, st));
 
     /* кабелі (під апаратами) */
@@ -364,7 +387,7 @@
     exitBox('gland', 285, 1965, 230, 40, '⇩ Кабельний ввід → сортувальник');
     exitBox('hose', 860, 1046, 190, 40, '↘ Гофра → відвідники');
 
-    return { bounds: { x: 0, y: 0, w: 1410, h: 2030 } };
+    return { bounds: { x: 0, y: -260, w: 1410, h: 2290 } };
   }
 
   window.VIEWS.cab = {

@@ -152,6 +152,9 @@ window.SV = (function () {
     terminal(g) { pth(g, 'M0 -20V-4M0 4V20'); E('circle', { r: 4, class: 'fill-w' }, g); },
     solenoid(g) { pth(g, 'M0 -20V-8M0 8V20'); E('rect', { x: -9, y: -8, width: 18, height: 16 }, g); pth(g, 'M-9 8L9 -8'); },
     limit(g) { SYM.no(g); pth(g, 'M-5 0H-12'); pth(g, 'M-12 -4L-17 0L-12 4Z'); },
+    limit_nc(g) { SYM.nc(g); pth(g, 'M4 -2H-12'); pth(g, 'M-12 -6L-17 -2L-12 2Z'); },
+    key(g) { SYM.nc(g); pth(g, 'M4 -2H-10', { 'stroke-dasharray': '2 2' }); E('circle', { cx: -13, cy: -2, r: 3 }, g); pth(g, 'M-16 -2H-21M-19 -2V1'); },
+    nc_t(g) { SYM.nc(g); pth(g, 'M5 -2H-10M-10 -7a5 5 0 0 0 0 10'); },
     box(g, o) {
       const w = o.w || 30, h = o.h || 22, hl = o.hl || 20;
       pth(g, 'M0 ' + -hl + 'V' + -h / 2 + 'M0 ' + h / 2 + 'V' + hl);

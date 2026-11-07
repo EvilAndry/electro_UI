@@ -92,9 +92,34 @@
     node('SC1', parts, { x: 600, y: 40, w: 38, h: 195 }, (p) => {
       R(p, 603, 48, 32, 187, 'mach2');
       R(p, 600, 40, 38, 10, 'cap-grey');
-      R(p, 609, 90, 18, 26, 'screen');
-      R(p, 611, 94, 14, 5, 'screen-red');
-      T(p, s(619), s(36), 'SC1', { class: 'zlbl b c', 'text-anchor': 'middle' });
+      T(p, s(619), s(36), 'Рама сканера', { class: 'zlbl b c', 'text-anchor': 'middle' });
+    });
+    const small = (id, x, y, w, h, cls, txt) => node(id, parts, { x, y, w, h }, (p) => {
+      R(p, x, y, w, h, cls, { rx: 1.5 });
+      if (txt) T(p, s(x + w / 2), s(y + h / 2) + 4, txt, { class: 'zlbl sm c', 'text-anchor': 'middle' });
+    });
+    small('SCN1', 607, 52, 24, 7, 'pc', 'SCN');
+    small('HMI1', 607, 64, 24, 30, 'screen', '');
+    small('CB1', 607, 100, 24, 12, 'board', '');
+    small('UZ2', 606, 118, 8, 10, 'psu-s', '');
+    small('UZ3', 615, 118, 8, 10, 'psu-s', '');
+    small('UZ4', 624, 118, 8, 10, 'psu-s', '');
+    small('X5', 613, 134, 12, 6, 'socket', '');
+    node('SB5', parts, { x: 638, y: 92, w: 12, h: 12 }, (p) => {
+      R(p, 638, 92, 12, 12, 'estop-box', { rx: 1.5 });
+      E('circle', { cx: s(644), cy: s(98), r: s(3.4), class: 'estop-btn' }, p);
+    });
+    node('SB6', parts, { x: 400, y: 112, w: 12, h: 12 }, (p) => {
+      R(p, 400, 112, 12, 12, 'estop-box', { rx: 1.5 });
+      E('circle', { cx: s(406), cy: s(118), r: s(3.4), class: 'estop-btn' }, p);
+      T(p, s(406), s(108), 'аварійні лінії', { class: 'zlbl sm c', 'text-anchor': 'middle' });
+    });
+    node('SQ2', parts, { x: 100, y: 196, w: 8, h: 8 }, (p) => { R(p, 100, 196, 8, 8, 'limit-sw', { rx: 1 }); });
+    node('SQ3', parts, { x: 112, y: 176, w: 8, h: 8 }, (p) => { R(p, 112, 176, 8, 8, 'limit-sw', { rx: 1 }); });
+    T(st, s(96), s(170), 'кінцевики', { class: 'zlbl sm' });
+    node('NET1', parts, { x: 676, y: 44, w: 64, h: 11 }, (p) => {
+      R(p, 676, 44, 64, 11, 'pc', { rx: 1.5 });
+      T(p, s(708), s(51.5), 'LAN', { class: 'zlbl sm c', 'text-anchor': 'middle' });
     });
     node('CAB', parts, { x: 668, y: 56, w: 80, h: 179 }, (p) => {
       R(p, 668, 56, 80, 179, 'cabinet');
@@ -133,22 +158,30 @@
       T(p, s(660), s(309), '⚡ мережа', { class: 'zlbl b c', 'text-anchor': 'middle' });
     });
 
-    /* приводи */
+    /* лінія кареток: верхня робоча гілка й нижня зворотна */
+    const LX0 = D.line.x0 - 20, LX1 = D.line.x1 + 20;
+    E('path', { d: 'M' + s(LX0) + ' ' + s(122) + 'H' + s(LX1), class: 'carriage-top' }, st);
+    E('path', { d: 'M' + s(LX1) + ' ' + s(222) + 'H' + s(LX0), class: 'carriage-ret' }, st);
+    E('path', { d: 'M' + s(LX1) + ' ' + s(122) + 'a' + s(50) + ' ' + s(50) + ' 0 0 1 0 ' + s(100) + 'M' + s(LX0) + ' ' + s(222) + 'a' + s(50) + ' ' + s(50) + ' 0 0 1 0 ' + s(-100), class: 'carriage-ret' }, st);
+    [300, 760, 1150].forEach((x) => E('path', { d: 'M' + s(x) + ' ' + s(117) + 'l' + s(10) + ' ' + s(5) + 'l' + s(-10) + ' ' + s(5), class: 'flow' }, st));
+    [1000, 500].forEach((x) => E('path', { d: 'M' + s(x) + ' ' + s(217) + 'l' + s(-10) + ' ' + s(5) + 'l' + s(10) + ' ' + s(5), class: 'flow' }, st));
+    T(st, s(LX0 + 10), s(116), 'каретки → (протяжки лише на верхній гілці)', { class: 'zlbl sm' });
+    T(st, s(LX0 + 10), s(232), '← зворотна гілка під лінією', { class: 'zlbl sm' });
+
+    /* протяжки */
     const motorPos = {};
-    const zoneMotors = {};
-    D.groups.forEach((G) => G.lines.forEach((Ln) => (zoneMotors[Ln.zone] = zoneMotors[Ln.zone] || []).push(Ln.m)));
-    const ZR = { Z1: [150, 228, 226], Z2: [252, 566, 222], Z3: [588, 872, 222] };
-    for (let k = 1; k <= 5; k++) ZR['MOD' + k] = [MODX(k) + 5, MODX(k) + MODW - 5, 141];
-    Object.keys(zoneMotors).forEach((z) => {
-      const list = zoneMotors[z], r = ZR[z];
-      if (!r) return;
-      list.forEach((m, i) => {
-        const x = list.length > 1 ? r[0] + (r[1] - r[0]) * i / (list.length - 1) : (r[0] + r[1]) / 2;
-        let y = r[2];
-        if (z === 'Z1') y = 226 - 0; // нижня частина похилого
-        motorPos[m] = [x, y];
-        node(m, parts, { x: x - 3, y: y - 3, w: 6, h: 6 }, (p) => E('circle', { cx: s(x), cy: s(y), r: s(2.6), class: 'motor' }, p));
+    D.groups.forEach((G) => G.lines.forEach((Ln) => {
+      const x = Ln.x, y = 122;
+      motorPos[Ln.m] = [x, y];
+      node(Ln.m, parts, { x: x - 5, y: y - 5, w: 10, h: 12 }, (p) => {
+        E('circle', { cx: s(x), cy: s(y), r: s(4), class: 'motor' }, p);
+        E('rect', { x: s(x - 2.2), y: s(y + 3), width: s(4.4), height: s(4), class: 'motor-box' }, p);
       });
+    }));
+    D.groups.forEach((G) => {
+      const xs = G.lines.map((l) => l.x);
+      E('path', { d: 'M' + s(xs[0] - 4) + ' ' + s(108) + 'H' + s(xs[xs.length - 1] + 4), class: 'grp-brace' }, st);
+      T(st, s((xs[0] + xs[xs.length - 1]) / 2), s(105), 'ПП' + G.n, { class: 'zlbl sm c', 'text-anchor': 'middle' });
     });
     /* відвідники */
     const yPos = {};
@@ -164,7 +197,8 @@
     /* порт підключення елемента на цьому виді */
     function attach(id, cid) {
       const j = ((SV.hash(cid) % 11) - 5) * 3.2;
-      if (motorPos[id]) { const [x, y] = motorPos[id]; return { t: 'TRAY', c: s(x), pre: [[s(x), s(y + 3)]] }; }
+      if (motorPos[id]) { const [x, y] = motorPos[id]; return { t: 'TRAY', c: s(x), pre: [[s(x), s(y + 7)]] }; }
+      if (id === 'NET1') return { t: 'TRAY', c: s(752), pre: [[s(740), s(50)], [s(752), s(50)]] };
       if (yPos[id]) { const [x, y] = yPos[id]; return { t: 'TRAY', c: s(x + 2), pre: [[s(x + 2), s(y + 2)]] }; }
       if (/^D\d$/.test(id)) { const b = reg[id]; const x = b.x + b.w / 2 + j * 0.3; return { t: 'FRAME', c: s(x), pre: [[s(x), s(58)]] }; }
       if (id === 'EL2') return { t: 'FRAME', c: s(1035), pre: [[s(1035), s(70)]] };

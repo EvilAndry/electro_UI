@@ -6,40 +6,31 @@
   const byId = SV.byId;
 
   const BW = 168, BH = 50;
-  const cx = (c) => 40 + c * 210;
   const ry = (r) => 70 + r * 84;
 
   const FUNC = {
     GRID: 'джерело 3~380 В',
     QF1: 'I > Iн → відкл.',
-    KV1: 'Umin < U < Umax',
+    KV1: '192 В < U < 260 В',
     QD1: 'IΔ > 30 мА → відкл.',
-    XB1: 'розподіл L1 L2 L3 N',
-    KM1: 'вмик. = (Пуск ∨ сам.) ∧ дозвіл',
+    KM1: 'вмик. від K1 (Робота)',
+    XB1: 'L1 L2 L3 N → ПП1–7',
     QF2: 'живлення керування',
-    HL1: 'індикація «Мережа»',
-    SB1: 'імпульс «Пуск»',
-    SB2: '«Стоп» (НЗ)',
-    SB3: 'аварійний стоп',
-    KT1: 'затримка ввімк. t₁',
-    KT2: 'таймер t₂',
-    KM2: 'живлення драйверів',
-    KM3: 'вмикання світла',
-    HL2: 'індикація «Робота»',
-    HL3: 'індикація «Аварія»',
-    K1: 'аварія → ПК, HL3',
-    BK1: 'вимір T',
-    AK1: 'T > Tуст → вент.',
-    M1: 'охолодження шафи',
-    SQ1: 'двері відчинені',
-    EL1: 'світло в шафі',
-    UZ1: '~220 → =24 В',
-    QF3: 'група оператора',
-    PC1: 'розрахунок сортування',
-    SC1: 'зчитування коду',
-    PR1: 'друк етикеток',
-    WT1: 'розетки столу',
-    EL2: 'світло модулів',
+    SB4: 'NC, на шафі', SB5: 'NC, рама сканера', SB6: 'NC, на лінії', SA1: 'ключ у роб. положенні', SQ2: 'NC, розворот', SQ3: 'NC, розворот',
+    SB1: 'NO, імпульс «Пуск»',
+    KM2: 'самоутримання → Лінія стоп',
+    KT1: 't₁: блоки живлення',
+    KT2: 't₂ ≥ t₁ + 10 с: плати',
+    SB2: 'NO, «Лінія старт»',
+    SB3: 'NC, «Стоп»',
+    KM3: 'самоутримання → Робота',
+    K1: 'вмикає котушку KM1',
+    HL1: 'зелена «Робота»', HL2: 'жовта «Пауза»', HL3: 'червона «Лінія стоп»',
+    BK1: 'вимір T', AK1: 'T > Tуст → вент.', M1: 'охолодження шафи',
+    SQ1: 'двері відчинені', EL1: 'світло в шафі',
+    UZ1: '~230 → =24 В', QF3: 'однофазна група', NET1: 'мережа', PC1: 'сервер / ПК',
+    SC1: 'рама сканера', UZ2: '~/=', UZ3: '~/=', UZ4: '~/=', CB1: 'центральна плата', HMI1: 'Speed · Uptime', SCN1: 'зчитування',
+    PR1: 'друк етикеток', WT1: 'розетки столу', EL2: 'світло лінії',
   };
 
   function build(ctx) {
@@ -47,7 +38,7 @@
     const deco = E('g', { class: 'deco' }, g);
     const links = E('g', { class: 'links' }, g);
     const nodes = E('g', { class: 'parts' }, g);
-    const BOX = {}; // id -> {x,y,w,h}
+    const BOX = {};
 
     const box = (id, x, y, o) => {
       o = o || {};
@@ -74,79 +65,87 @@
       E('rect', { x: -2, y: -2, width: w + 4, height: h + 4, rx: 7, class: 'hit' }, gg);
       ctx.regEl(id, gg, { x, y, w, h });
     };
-    const P = (id, c, r, o) => box(id, cx(c), ry(r), o);
 
-    /* смуги */
-    const lane = (y, h, title, x, w) => {
-      E('rect', { x: x || 20, y, width: w || 1660, height: h, rx: 10, class: 'lane' }, deco);
-      T(deco, (x || 20) + 14, y + 22, title, { class: 'lane-t' });
+    const lane = (x, y, w, h, title) => {
+      E('rect', { x, y, width: w, height: h, rx: 10, class: 'lane' }, deco);
+      T(deco, x + 14, y + 22, title, { class: 'lane-t' });
     };
-    lane(28, 120, 'Ввід і захист');
-    lane(160, 760, 'Керування');
-    lane(932, 640, 'Обладнання оператора · керування відвідниками');
-    lane(28, 1544, 'Приводи конвеєрів', 1700, 1080);
+    lane(20, 28, 2140, 104, 'Ввід і захист (працює завжди)');
+    lane(20, 144, 2140, 1000, 'Керування: Пауза → Лінія стоп → Робота');
+    lane(20, 1156, 2140, 700, 'Однофазне навантаження (Лінія стоп) · плати / відвідники — припущення');
+    lane(2180, 28, 620, 1828, 'Трифазне навантаження (Робота)');
 
     /* ввід */
-    P('GRID', 0, 0); P('QF1', 1, 0); P('KV1', 2, 0); P('QD1', 3, 0); P('XB1', 4, 0); P('KM1', 5, 0);
-    /* керування */
-    P('QF2', 1, 3); P('HL1', 2, 2);
-    P('SB3', 2, 3); P('SB2', 2, 4); P('SB1', 2, 5);
-    box('G_OR1', cx(3) + 50, ry(5) - 6, { w: 64, h: 62 });
-    box('G_AND1', cx(4) + 50, ry(3) + 30, { w: 64, h: 86 });
-    P('KT1', 5, 3); P('KM2', 6, 3);
-    P('KT2', 5, 4); P('HL2', 5, 2);
-    P('K1', 3, 7); P('HL3', 4, 7);
-    P('BK1', 1, 8); P('AK1', 2, 8); P('M1', 3, 8);
-    P('SQ1', 4, 8); P('EL1', 5, 8);
-    P('UZ1', 6, 6);
-    /* оператор */
-    P('QF3', 0, 12);
-    ['QF4', 'QF5', 'QF6', 'QF7', 'QF8'].forEach((q, i) => P(q, 1, 11 + i * 0.9, { h: 44 }));
-    for (let k = 1; k <= 5; k++) box('D' + k, cx(2) + 20, ry(10.85) + (k - 1) * 26, { cell: true, w: 128, h: 22, sub: 'табло' });
-    P('PR1', 3, 11.8); P('WT1', 2, 12.9); P('PC1', 3, 12.9); P('SC1', 2, 13.9);
-    P('KM3', 3, 14.6, { h: 44 }); P('EL2', 4, 14.6, { h: 44 });
-    /* відвідники */
-    const A0 = 980, AH = 18;
+    box('GRID', 40, ry(0)); box('QF1', 250, ry(0)); box('KV1', 460, ry(0)); box('QD1', 670, ry(0));
+    box('KM1', 1760, ry(0)); box('XB1', 1970, ry(0), { w: 160 });
+
+    /* коло аварійної зупинки та Пуск */
+    box('QF2', 40, ry(4.5));
+    ['SB4', 'SB5', 'SB6', 'SA1', 'SQ2', 'SQ3'].forEach((id, i) => box(id, 250, ry(2) + i * 76, { h: 46 }));
+    box('SB1', 250, ry(8.2));
+    box('G_OR1', 480, ry(8.2) - 6, { w: 64, h: 62 });
+    box('G_AND1', 640, ry(2), { w: 64, h: ry(8.2) + 56 - ry(2) });
+    box('KM2', 780, ry(5));
+    box('KT1', 1000, ry(3.6));
+    box('KT2', 1000, ry(6.4));
+    box('UZ1', 1210, ry(2.2));
+    /* Лінія старт */
+    box('SB3', 1210, ry(5.2));
+    box('SB2', 1000, ry(8.6));
+    box('G_OR2', 1240, ry(8.6) - 6, { w: 64, h: 62 });
+    box('G_AND2', 1420, ry(5), { w: 64, h: ry(8.6) + 56 - ry(5) });
+    box('KM3', 1530, ry(6.6));
+    box('K1', 1530, ry(4.4));
+    /* індикація */
+    box('HL3', 1760, ry(8.4));
+    box('HL2', 1210, ry(10.2));
+    box('HL1', 1970, ry(2.2));
+    /* клімат */
+    box('BK1', 40, ry(10.4), { h: 44 }); box('AK1', 250, ry(10.4), { h: 44 }); box('M1', 460, ry(10.4), { h: 44 });
+    box('SQ1', 670, ry(10.4), { h: 44 }); box('EL1', 880, ry(10.4), { h: 44 });
+
+    /* однофазне навантаження */
+    const oy = 1200;
+    box('QF3', 40, oy + 160);
+    ['QF4', 'QF5', 'QF6', 'QF7', 'QF8'].forEach((q, i) => box(q, 250, oy + i * 70, { h: 46 }));
+    for (let k = 1; k <= 5; k++) box('D' + k, 480, oy + (k - 1) * 22, { cell: true, w: 128, h: 19, sub: 'табло' });
+    box('PR1', 670, oy + 70, { h: 46 });
+    box('WT1', 480, oy + 140, { h: 46 });
+    box('PC1', 670, oy + 140, { h: 46 });
+    box('SC1', 480, oy + 210, { h: 46 });
+    ['UZ2', 'UZ3', 'UZ4'].forEach((u, i) => box(u, 670, oy + 220 + i * 60, { w: 120, h: 44 }));
+    box('CB1', 880, oy + 220, { h: 46 });
+    box('HMI1', 1090, oy + 280, { h: 46 });
+    box('SCN1', 880, oy + 340, { h: 46 });
+    box('EL2', 480, oy + 280, { h: 46 });
+    box('NET1', 480, oy + 420, { h: 46 });
+    /* плати / відвідники */
+    const A0 = oy, AH = 20;
     D.drivers.forEach((dv, i) => {
-      box(dv.a, cx(6), A0 + i * AH, { cell: true, w: 120, h: AH - 3, sub: 'драйвер' });
-      box(dv.y, cx(6) + 160, A0 + i * AH, { cell: true, w: 110, h: AH - 3, sub: dv.mod.replace('MOD', 'мод.') });
+      box(dv.a, 1640, A0 + i * AH, { cell: true, w: 120, h: AH - 3, sub: 'плата' });
+      box(dv.y, 1800, A0 + i * AH, { cell: true, w: 110, h: AH - 3, sub: dv.mod.replace('MOD', 'мод.') });
     });
     for (let k = 1; k <= 4; k++) {
       const first = (k - 1) * 8, last = Math.min(k * 8, 30) - 1;
       const y = A0 + first * AH, h = (last - first + 1) * AH - 3;
-      box('KR' + k, cx(5), y + h / 2 - 25, { f: 'канали ' + (first + 1) + '–' + (last + 1) });
+      box('KR' + k, 1420, y + h / 2 - 25, { f: 'канали ' + (first + 1) + '–' + (last + 1) });
     }
-    /* приводи */
-    const GX = 1730;
+    /* трифазне */
     D.groups.forEach((G, gi) => {
-      const y0 = 70 + gi * 214;
-      box(G.pa, GX, y0 + 6 * 16 - 25, { w: 150, f: 'вимір I групи · ' + G.phase });
+      const y0 = 80 + gi * 250;
+      box(G.pa, 2200, y0 + 2 * 44 - 25, { w: 150, f: 'плавний пуск' });
       G.lines.forEach((L, i) => {
-        box(L.qf, GX + 190, y0 + i * 16, { cell: true, w: 120, h: 13, sub: 'автомат' });
-        box(L.m, GX + 350, y0 + i * 16, { cell: true, w: 120, h: 13, sub: 'привод' });
+        box(L.qf, 2390, y0 + i * 44, { cell: true, w: 120, h: 36, sub: '3P' });
+        box(L.m, 2550, y0 + i * 44, { cell: true, w: 230, h: 36, sub: '№' + L.k + ' · ' + (byId[L.zone] ? byId[L.zone].name.split(' ')[0] : L.zone) + (/\d/.test(L.zone) ? ' ' + L.zone.replace(/\D/g, '') : '') });
       });
     });
-    // зони — праворуч від своїх приводів
-    const zoneRows = {};
-    D.groups.forEach((G, gi) => G.lines.forEach((L, i) => {
-      const y = 70 + gi * 214 + i * 16;
-      const z = zoneRows[L.zone] || (zoneRows[L.zone] = { y0: y, y1: y });
-      z.y0 = Math.min(z.y0, y); z.y1 = Math.max(z.y1, y + 13);
-    }));
-    Object.keys(zoneRows).forEach((z) => {
-      const r = zoneRows[z];
-      box(z, GX + 510, r.y0, { w: 230, h: Math.max(26, r.y1 - r.y0), f: ' ' });
-    });
-    box('ZOUT', GX + 510, 70 + 7 * 214 - 8, { w: 230, h: 46, f: 'живлення не задане' });
 
     /* зв'язки */
     const all = [];
-    const cabSkip = new Set();
     D.cables.forEach((c) => {
       if (c.logic === false) return;
       if (!BOX[c.from] || !BOX[c.to]) return;
       all.push({ a: c.from, b: c.to, cabs: [c.id], kind: c.kind, label: '' });
-      cabSkip.add(c.id);
     });
     D.logicLinks.forEach((L) => {
       if (!BOX[L.a] || !BOX[L.b]) return;
@@ -165,22 +164,21 @@
         d = 'M' + ax + ' ' + ay + 'C' + (ax + k) + ' ' + ay + ',' + (bx - k) + ' ' + by + ',' + bx + ' ' + by;
         ex = bx; ey = by; ang = 0; mx = (ax + bx) / 2; my = (ay + by) / 2;
       } else {
-        // зворотний зв'язок — знизу
         const sx = A.x + A.w / 2, sy = A.y + A.h, tx = B.x + B.w / 2, ty = B.y + B.h;
-        const dip = Math.max(sy, ty) + 60;
+        const dip = Math.max(sy, ty) + 50;
         d = 'M' + sx + ' ' + sy + 'C' + sx + ' ' + dip + ',' + tx + ' ' + dip + ',' + tx + ' ' + ty;
-        ex = tx; ey = ty; ang = -90; mx = (sx + tx) / 2; my = dip - 14;
+        ex = tx; ey = ty; ang = -90; mx = (sx + tx) / 2; my = dip - 12;
       }
       const lg = E('g', { class: 'lnk k-' + L.kind }, links);
       E('path', { d, class: 'l-hit' }, lg);
       E('path', { d, class: 'l-core', stroke: color }, lg);
       E('path', { d: 'M-8 -4L0 0L-8 4Z', class: 'l-arrow', fill: color, transform: 'translate(' + ex + ' ' + ey + ') rotate(' + ang + ')' }, lg);
       if (L.label) T(lg, mx, my - 4, L.label, { class: 'lbl l-lab', 'text-anchor': 'middle' });
-      const bb = { x: Math.min(A.x, B.x), y: Math.min(A.y, B.y), w: Math.abs((B.x + B.w) - A.x) + A.w, h: Math.abs(B.y - A.y) + Math.max(A.h, B.h) };
-      ctx.regLink(lg, L.cabs, L.a, L.b, bb);
+      const x0 = Math.min(A.x, B.x), y0 = Math.min(A.y, B.y);
+      ctx.regLink(lg, L.cabs, L.a, L.b, { x: x0, y: y0, w: Math.max(A.x + A.w, B.x + B.w) - x0, h: Math.max(A.y + A.h, B.y + B.h) - y0 });
     });
 
-    return { bounds: { x: 0, y: 0, w: 2800, h: 1600 } };
+    return { bounds: { x: 0, y: 0, w: 2820, h: 1880 } };
   }
 
   window.VIEWS.logic = {

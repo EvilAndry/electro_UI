@@ -29,6 +29,19 @@
   };
   const narrow = () => window.matchMedia('(max-width: 900px)').matches;
 
+  /* ------------------------------ режими лінії ------------------------------ */
+  const LV = { pause: 0, stop: 1, run: 2 };
+  function elActive(e, m) {
+    if (!e || e.virtual) return false;
+    if (e.only) return e.only.indexOf(m) >= 0;
+    return !!e.mode && LV[e.mode] <= LV[m];
+  }
+  function cabActive(c, m) {
+    if (c.only) return c.only.indexOf(m) >= 0;
+    if (c.mode) return LV[c.mode] <= LV[m];
+    return elActive(byId[c.from], m) && elActive(byId[c.to], m);
+  }
+
   /* ------------------------------ підсвічування ------------------------------ */
   function compute(sel) {
     if (!sel) return null;
@@ -37,6 +50,13 @@
     if (sel.t === 'c') {
       const c = cabById[sel.id]; if (!c) return null;
       addCab(c); r.primCab.add(c.id);
+      return r;
+    }
+    if (sel.t === 'm') {
+      D.elements.forEach((e) => { if (elActive(e, sel.id)) r.els.add(e.id); });
+      D.cables.forEach((c) => { if (cabActive(c, sel.id)) r.cabs.add(c.id); });
+      const m = D.modes.find((x) => x.id === sel.id);
+      if (m) r.prim.add(m.lamp);
       return r;
     }
     if (sel.t === 'l') {
@@ -112,6 +132,7 @@
       regEl(id, node, bb) { node.classList.add('elx'); node.setAttribute('data-el', id); (reg.els[id] = reg.els[id] || []).push({ node, bb }); },
       regCab(id, node, bb) { node.setAttribute('data-cab', id); (reg.cabs[id] = reg.cabs[id] || []).push({ node, bb }); },
       regLink(node, cabs, a, b, bb) { node.setAttribute('data-lnk', reg.links.length); reg.links.push({ node, cabs, a, b, bb }); },
+      addBox(id, bb) { const l = reg.cabs[id]; if (l && l[0]) l.push({ node: l[0].node, bb }); },
       regExit(node, cabs, update, bb) { reg.exits.push({ node, cabs, update, bb }); },
       cable(parent, c, pts, o) {
         o = o || {};
@@ -362,7 +383,7 @@
     refresh();
     renderInfo();
     writeHash();
-    if (t && state.focus) state.panes.forEach((q) => { if (q !== fromPane) focusPane(q, true); });
+    if (t && t.t !== 'm' && state.focus) state.panes.forEach((q) => { if (q !== fromPane) focusPane(q, true); });
     if (t && narrow()) openSheet(true);
   }
 
@@ -394,7 +415,21 @@
   function renderInfo() {
     const s = state.sel;
     let h = '';
+    const modeBtns = '<div class="modes">' + D.modes.map((m) => '<button data-mode="' + m.id + '" class="' + (s && s.t === 'm' && s.id === m.id ? 'on' : '') + '"><i style="background:' + m.color + '"></i>' + esc(m.name) + '</button>').join('') + '</div>';
+    if (s && s.t === 'm') {
+      const m = D.modes.find((x) => x.id === s.id);
+      const H = compute(s);
+      h += '<div class="ih"><span class="big"><i class="lampdot" style="background:' + m.color + '"></i>' + esc(m.name) + '</span><button class="x" data-clear title="Зняти виділення">×</button></div>';
+      h += '<h3>Режим лінії</h3>' + modeBtns;
+      h += '<p>' + esc(m.text) + '</p><p class="muted">' + esc(m.next) + '</p>';
+      const on = [...H.els].filter((id) => byId[id] && byId[id].type !== 'system');
+      h += '<h3>Під напругою (' + on.length + ')</h3><div class="chips">' + on.map((id) => '<a href="#" data-goto-e="' + esc(id) + '">' + esc(SV.label(id)) + '</a>').join('') + '</div>';
+      info.querySelector('.info-body').innerHTML = h;
+      return;
+    }
     if (!s) {
+      h += '<div class="ih"><h2>Режими лінії</h2></div>' + modeBtns +
+        '<p class="muted small">Натисніть режим, щоб підсвітити все, що в ньому під напругою.</p>';
       h += '<div class="ih"><h2>Як користуватися</h2></div>';
       h += '<ul class="howto"><li><b>Наведіть</b> або <b>торкніться</b> елемента чи кабелю на будь-якій схемі — його зв’язки підсвітяться на всіх видах.</li>' +
         '<li>Повторний клік або клік по порожньому місцю — зняти виділення.</li>' +
@@ -405,7 +440,7 @@
       h += '<div class="note"><b>Чернетка.</b> Схема складена за фотографіями. Частина функцій та з’єднань — припущення (позначені пунктиром). Дані редагуються у <code>js/data.js</code>.</div>';
       const nE = D.elements.filter((e) => !e.virtual && e.type !== 'system').length;
       h += '<div class="stats"><div><b>' + nE + '</b><span>елементів</span></div><div><b>' + D.cables.length + '</b><span>кабелів</span></div><div><b>' + D.elements.filter((e) => e.assumed).length + '</b><span>припущень</span></div></div>';
-      h += '<h3>Групи приводів</h3><div class="chips">' + D.groups.map((G) => '<a href="#" data-goto-e="' + G.pa + '">Г' + G.n + ' · ' + G.phase + '</a>').join('') + '</div>';
+      h += '<h3>Плавні пуски та протяжки</h3><div class="chips">' + D.groups.map((G) => '<a href="#" data-goto-e="' + G.pa + '">ПП' + G.n + ' · протяжки ' + G.lines[0].k + '–' + G.lines[G.lines.length - 1].k + '</a>').join('') + '</div>';
       h += '<h3>Зони сортувальника</h3><div class="chips">' + ['Z1', 'Z2', 'Z3', 'MOD1', 'MOD2', 'MOD3', 'MOD4', 'MOD5', 'ZOUT', 'WS', 'CAB'].map((z) => '<a href="#" data-goto-e="' + z + '">' + esc(byId[z].name) + '</a>').join('') + '</div>';
     } else if (s.t === 'e') {
       const e = byId[s.id];
@@ -454,10 +489,14 @@
     info.querySelector('.info-body').innerHTML = h;
   }
   info.addEventListener('click', (e) => {
-    const a = e.target.closest('[data-goto-e],[data-goto-c],[data-clear]');
+    const a = e.target.closest('[data-goto-e],[data-goto-c],[data-clear],[data-mode]');
     if (!a) return;
     e.preventDefault();
     if (a.hasAttribute('data-clear')) return select(null);
+    if (a.hasAttribute('data-mode')) {
+      const t = { t: 'm', id: a.getAttribute('data-mode') };
+      return select(same(t, state.sel) ? null : t);
+    }
     if (a.hasAttribute('data-goto-e')) select({ t: 'e', id: a.getAttribute('data-goto-e') });
     else select({ t: 'c', id: a.getAttribute('data-goto-c') });
   });
@@ -535,7 +574,7 @@
   function writeHash() {
     const s = state.sel;
     const parts = [];
-    if (s && (s.t === 'e' || s.t === 'c')) parts.push((s.t === 'e' ? 'el=' : 'cab=') + encodeURIComponent(s.id));
+    if (s && (s.t === 'e' || s.t === 'c' || s.t === 'm')) parts.push(({ e: 'el=', c: 'cab=', m: 'mode=' })[s.t] + encodeURIComponent(s.id));
     parts.push('v=' + state.panes.map((p) => p.view).filter(Boolean).join(','));
     const h = '#' + parts.join('&');
     if (location.hash !== h) history.replaceState(null, '', h);
@@ -568,6 +607,7 @@
     state.panes.forEach((p) => { if (p.svg.clientWidth) { fit(p); p.fitted = true; } });
     if (H.el && byId[H.el]) select({ t: 'e', id: H.el });
     else if (H.cab && cabById[H.cab]) select({ t: 'c', id: H.cab });
+    else if (H.mode && D.modes.some((m) => m.id === H.mode)) select({ t: 'm', id: H.mode });
     else renderInfo();
     window.matchMedia('(max-width: 900px)').addEventListener('change', () => setLayout(state.layout));
   }
